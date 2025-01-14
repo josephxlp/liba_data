@@ -92,9 +92,6 @@ def get_ee_geometry_s2(i, g, name):
 # NBAI: Normalized Built-up Area Index.
 # UI: Urban Index
 
-
-
-
 def get_S2median(region,band_codes,CLOUD_FILTER=30):
     s2coll = ee.ImageCollection('COPERNICUS/S2_HARMONIZED') \
              .filterBounds(region) \
