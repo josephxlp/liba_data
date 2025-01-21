@@ -163,6 +163,7 @@ def download_sentinel2_indices(i,g,name,S2tile_path,scale):
 
 def get_S2median_indices(region, CLOUD_FILTER=30):
     """
+    # https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR_HARMONIZED
     Generate median composite from Sentinel-2 imagery and compute additional indices.
     
     Parameters:
