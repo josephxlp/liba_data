@@ -176,7 +176,7 @@ def get_S2median_indices(region, CLOUD_FILTER=30):
     # Import Sentinel-2 dataset and filter it
     s2coll = ee.ImageCollection('COPERNICUS/S2_HARMONIZED') \
         .filterBounds(region) \
-        .filterDate('2021-01-01', '2022-01-01') \
+        .filterDate('2015-01-01', '2022-01-01') \
         .filter(ee.Filter.lte('CLOUDY_PIXEL_PERCENTAGE', CLOUD_FILTER))
     
     # Apply cloud masking
