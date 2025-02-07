@@ -3,7 +3,12 @@ import dotenv
 import pandas as pd
 import subprocess
 
-def download_copernicus_dem(file_urls, odir):
+# Directory settings
+from upaths import outdir_tandemx
+
+
+
+def download_copernicus_dem(file_urls, odir, X=30):
     """
     Downloads Copernicus DEM tiles using wget with authentication from .env credentials.
     Skips files that already exist.
@@ -16,8 +21,13 @@ def download_copernicus_dem(file_urls, odir):
     dotenv.load_dotenv()
 
     # Get credentials
-    username = os.getenv("COPERNICUS_USERNAME")
-    password = os.getenv("COPERNICUS_PASSWORD")
+    if X == 30:
+        username = os.getenv("COPERNICUS_USERNAME")
+        password = os.getenv("COPERNICUS_PASSWORD")
+
+    elif X == 90:
+        username = os.getenv("COPERNICUS_USERNAME_90")
+        password = os.getenv("COPERNICUS_PASSWORD_90")
 
     if not username or not password:
         raise ValueError("Missing COPERNICUS_USERNAME or COPERNICUS_PASSWORD in .env file.")
@@ -55,14 +65,13 @@ def download_copernicus_dem(file_urls, odir):
     # Execute the command
     subprocess.run(wget_cmd, check=True)
 
-# Directory settings
-from upaths import outdir_tandemx
+
 
 outdir = outdir_tandemx
 
 # Define tiles to download
 tnames = ['S01W063', 'N13E103','N10E105','N09E106','S02W063']
-X = 30  # DEM resolution (30m or 90m) 90 is not working, probably need a thingy to do ti
+X = 90  # DEM resolution (30m or 90m) 90 is not working, probably need a thingy to do ti
 
 if X == 30:
     odir = f'{outdir}/TDEMX{X}'
@@ -79,4 +88,4 @@ furls = sorted(set(i for i in urls for j in tnames if j in i))
 assert len(tnames) == len(furls), 'Check files against tile names'
 
 # Download filtered URLs
-download_copernicus_dem(furls, odir)
+download_copernicus_dem(furls, odir,X)
