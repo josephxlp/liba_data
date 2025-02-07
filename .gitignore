@@ -3,4 +3,4 @@ upaths.py
 sec.py 
 AANFO
 *.pyc
-
+.env 
