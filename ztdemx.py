@@ -1,4 +1,5 @@
 import os
+import time 
 import dotenv
 import pandas as pd
 import subprocess
@@ -8,7 +9,7 @@ from upaths import outdir_tandemx
 
 
 
-def download_copernicus_dem(file_urls, odir, X=30):
+def download_tandemx_dem(file_urls, odir, X=30):
     """
     Downloads Copernicus DEM tiles using wget with authentication from .env credentials.
     Skips files that already exist.
@@ -65,25 +66,55 @@ def download_copernicus_dem(file_urls, odir, X=30):
     # Execute the command
     subprocess.run(wget_cmd, check=True)
 
-outdir = outdir_tandemx
+def notify_send(title: str, message: str, duration: int = 5):
+    """
+    Displays a notification on Linux using notify-send.
+    
+    Parameters:
+    title (str): The notification title.
+    message (str): The notification message.
+    duration (int): Time in seconds to display the notification.
+    """
+    os.system(f'notify-send -t {duration * 1000} "{title}" "{message}"')
 
-# Define tiles to download
-tnames = ['S01W063', 'N13E103','N10E105','N09E106','S02W063']
-X = 90  # DEM resolution (30m or 90m) 90 is not working, probably need a thingy to do ti
 
-if X == 30:
-    odir = f'{outdir}/TDEMX{X}'
-    urls = pd.read_csv('TDM30_EDEM-url-list.txt').squeeze().tolist()
-elif X == 90:
-    odir = f'{outdir}/TDEMX{X}'
-    urls = pd.read_csv('TDM90-url-list.txt').squeeze().tolist()
-    print(len(urls))
-else:
-    raise ValueError("Invalid DEM resolution. Choose 30 or 90.")
 
-# Filter URLs based on requested tile names
-furls = sorted(set(i for i in urls for j in tnames if j in i))
-assert len(tnames) == len(furls), 'Check files against tile names'
+# add notification or send email
 
-# Download filtered URLs
-download_copernicus_dem(furls, odir,X)
+ti = time.perf_counter()
+
+id = 5#2#1#3#4
+
+for id in range(1,26):
+    print(id)
+    pathdir = f"/home/ljp238/Downloads/tdem_batches/batch_{id}/"
+    outdir = f"/media/ljp238/12TBWolf/RSPROX/TANDEMX_EDEM/batch_{id}"
+    os.makedirs(outdir, exist_ok=True)
+    txtfile = f'{pathdir}/batch_{id}.txt'
+
+    time.sleep(5)
+
+
+    if os.path.isfile(txtfile):
+        print(txtfile)
+        ta = time.perf_counter()
+
+        print('file good')
+        urls = pd.read_csv(txtfile).squeeze().tolist(); print(len(urls))
+        #urls = urls[:2]
+        print(len(urls))
+        download_tandemx_dem(file_urls=urls, odir=outdir, X=30)
+        tb = time.perf_counter() - ta
+        print(f'run.time {tb/60} mins')
+
+    time.sleep(15)
+
+
+tf = time.perf_counter() - ti
+print(f'run.time {tf/60} mins')
+print('outdir')
+
+
+# # Example usage
+# notify_send("Python Script Finished", 
+#             f"Your script has completed execution.\n{outdir}", 5000)
