@@ -65,8 +65,6 @@ def download_copernicus_dem(file_urls, odir, X=30):
     # Execute the command
     subprocess.run(wget_cmd, check=True)
 
-
-
 outdir = outdir_tandemx
 
 # Define tiles to download
