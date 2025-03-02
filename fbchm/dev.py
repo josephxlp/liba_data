@@ -1,0 +1,100 @@
+import os 
+import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
+import time 
+import pandas as pd 
+import geopandas as gpd 
+from utils import enforce_mask, enforce_resolution,run_with_notification
+from uvars import outdir,patches_fn, block_name
+
+ta = time.perf_counter()
+
+
+
+os.makedirs(outdir, exist_ok=True)
+
+s3_client = boto3.client('s3', config=Config(signature_version=UNSIGNED))
+bucket='dataforgood-fb-data'
+localdir= outdir# 'data'
+os.makedirs(localdir, exist_ok=True)
+gfile_gn = os.path.join(outdir, "tiles.geojson")
+
+s3file='forests/v1/alsgedi_global_v6_float/tiles.geojson'
+localfile=f"{localdir}/{os.path.basename(s3file)}"
+if not os.path.exists(localfile):
+    s3_client.download_file(bucket, s3file, localfile)
+
+
+tiles= gpd.read_file(gfile_gn)
+target=gpd.read_file(patches_fn)
+
+if tiles.crs != target.crs:
+    target = target.to_crs(tiles.crs)
+
+target_tiles=gpd.sjoin(tiles, target.loc[:,:])#0
+target_tiles.nunique()
+
+#download data from AWS S3
+s3chmpath='forests/v1/alsgedi_global_v6_float/chm'
+s3mskpath='forests/v1/alsgedi_global_v6_float/msk'
+s3metapath='forests/v1/alsgedi_global_v6_float/metadata'
+tifs=[]
+tres=[]
+metas=[]
+res = 12
+times =[]
+
+# Get the unique tiles from the target_tiles
+unique_tiles = target_tiles['tile'].unique()
+
+# Loop through the unique tiles only
+for tile in unique_tiles:
+    ti = time.perf_counter()
+    print(f"Processing tile: {tile}")
+    
+    # Download CHM
+    s3file = f"{s3chmpath}/{tile}.tif"
+    localfile = f"{localdir}/{os.path.basename(s3file)}"
+    print(f"Downloading CHM to: {localfile}")
+    if not os.path.exists(localfile):
+        s3_client.download_file(bucket, s3file, localfile)
+
+    # Download cloud masks
+    mskfile = f"{s3mskpath}/{tile}.tif.msk"
+    localmskfile = f"{localdir}/{os.path.basename(mskfile)}"
+    if not os.path.exists(localmskfile):
+        s3_client.download_file(bucket, mskfile, localmskfile)
+
+    # Download metadata
+    jsonfile = f"{s3metapath}/{tile}.geojson"
+    localjsonfile = f"{localdir}/{os.path.basename(jsonfile)}"
+    if not os.path.exists(localjsonfile):
+        s3_client.download_file(bucket, jsonfile, localjsonfile)
+    metas.append(localjsonfile)
+        
+    # Apply mask to the downloaded CHM
+    outfile = localfile.replace('.tif', 'masked.tif')
+    if not os.path.exists(outfile):
+        enforce_mask(localfile, outfile)
+    tifs.append(outfile)
+
+    # # Apply resolution adjustment
+    # res_outfile = localfile.replace('.tif', f'masked_{str(res)}.tif')
+    # if not os.path.exists(res_outfile):
+    #     enforce_resolution(localfile, outfile=res_outfile, res=res)
+    #     tres.append(res_outfile)
+
+    tf = time.perf_counter() - ta 
+    print(f'Tile Download Time {tf/60} min(s)')
+    times.append(tf)
+
+# Write tifs and metas to CSV file
+df = pd.DataFrame({'tif': tifs, 'meta': metas,  'times':times})
+#'restif':res_outfile
+df.to_csv(f"{localdir}/{block_name}.csv", index=False)
+
+
+tb = time.perf_counter() - ta 
+print(f'RUN.TIME {tb/60} min(s)')
+run_with_notification(timeout=5000)
