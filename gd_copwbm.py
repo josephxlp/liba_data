@@ -6,10 +6,12 @@ import ee
 import time 
 from concurrent.futures import ThreadPoolExecutor
 from g_utils import grab_copwbm_patch,get_tilename
-from g_vars import dir_geepatch, dir_gpkg,scale, cpus 
+#from g_vars import dir_geepatch, dir_gpkg,scale, cpus 
 
-
+cpus = 100 
 name = 'COPWBM'
+scale = 30 
+dir_gpkg = "/media/ljp238/12TBWolf/RSPROX/OUT_TILES/AUXPATCHES/TILES12/GPKG"
 
 #dir_geepatch = "/media/ljp238/6tb/Joseph/aoi_datasets/geepatch/"
 #dir_gpkg = "/media/ljp238/6tb/Joseph/aoi_datasets/geepatch/geepatch_vectors/"
@@ -32,7 +34,7 @@ if __name__ == '__main__':
     print(gpkg_files)
     with ThreadPoolExecutor(cpus) as TEX:
         for fi in range(len(gpkg_files)):
-            #if fi > 0: break
+            if fi > 0: break
         
             gfile = gpkg_files[fi]
             g = gpd.read_file(gfile)
@@ -44,7 +46,7 @@ if __name__ == '__main__':
 
             for i in range(g.shape[0]):
                 #grab_copwbm_patch(i,g,dir_tile_name,scale,name)
-                #if i > 3: break
+                if i > 3: break
                 TEX.submit(grab_copwbm_patch, i,g,dir_tile_name,scale,name)
 
                
